@@ -1,7 +1,7 @@
 # Projeto de Compiladores
 
 > **Disciplina:** Compiladores
-> **Docente:** Luba
+> **Docente:** Fabio Lubacheski
 > **Metodologia:** Scrum / Agile
 
 ---
