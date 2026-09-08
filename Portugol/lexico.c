@@ -6,7 +6,7 @@ char *buffer;
 typedef enum { 
     ERRO,
 
-    //SIMBULOS
+    //SIMBOLOS
     PONTO_VIRGULA,
     VIRGULA,
     DOIS_PONTOS,
