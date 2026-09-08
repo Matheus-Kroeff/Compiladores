@@ -93,13 +93,50 @@ TInfoAtomo obter_atomo() {
     }
 
     // Identificadores e Palavras Reservadas (começam com letra)
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+    if (isalpha(c)) {
+        char buffer_id[100];
+        int i = 0;
+        
+        while (isalnum(c) || c == '_') {
+            if (i < 99) buffer_id[i++] = tolower(c); // Normaliza para minúsculo para facilitar
+            c = fgetc(arquivo);
+        }
+        buffer_id[i] = '\0';
+        ungetc(c, arquivo); // Devolve o último caractere que não pertence ao identificador
+
+        info.atomo = confere_palavra_reservada(buffer_id);
+        
+        if (info.atomo == IDENTIFICADOR) {
+            strncpy(info.atributo.id, buffer_id, 16);
+            info.atributo.id[15] = '\0';
+        }
         return info;
     }
 
     // Constantes Inteiras (começam com dígito)
-    if (c >= '0' && c <= '9') {
+    if (isdigit(c)) {
+        int valor = 0;
+        while (isdigit(c)) {
+            valor = valor * 10 + (c - '0');
+            c = fgetc(arquivo);
+        }
+        ungetc(c, arquivo);
+        
         info.atomo = CONSTINT;
+        info.atributo.numero = valor;
+        return info;
+    }
+
+    // Constantes Caractere
+    if (c == '\'') {
+        char ch = fgetc(arquivo);
+        char aspas = fgetc(arquivo); // Deve fechar com '\''
+        if (aspas == '\'') {
+            info.atomo = CONSTCHAR;
+            info.atributo.ch = ch;
+        } else {
+            info.atomo = ERRO;
+        }
         return info;
     }
 
@@ -123,6 +160,9 @@ TInfoAtomo obter_atomo() {
         case '*': 
             info.atomo = MULTIPLICACAO; 
             break;
+        case '/': 
+            info.atomo = DIVISAO; 
+            break;
         case '=': 
             info.atomo = IGUAL; 
             break;
@@ -136,10 +176,10 @@ TInfoAtomo obter_atomo() {
         case ':': {
             char proximo = fgetc(arquivo);
             if (proximo == '=') {
-                info.atomo = ATRIBUICAO; // :=
+                info.atomo = ATRIBUICAO;
             } else {
-                ungetc(proximo, arquivo); // Devolve o caractere se não for igual
-                info.atomo = DOIS_PONTOS; // :
+                ungetc(proximo, arquivo);
+                info.atomo = DOIS_PONTOS;
             }
             break;
         }
@@ -147,12 +187,12 @@ TInfoAtomo obter_atomo() {
         case '<': {
             char proximo = fgetc(arquivo);
             if (proximo == '=') {
-                info.atomo = MENOR_IGUAL; // <=
+                info.atomo = MENOR_IGUAL;
             } else if (proximo == '>') {
-                info.atomo = DIFERENTE; // <>
+                info.atomo = DIFERENTE;
             } else {
                 ungetc(proximo, arquivo);
-                info.atomo = MENOR; // <
+                info.atomo = MENOR;
             }
             break;
         }
@@ -160,10 +200,10 @@ TInfoAtomo obter_atomo() {
         case '>': {
             char proximo = fgetc(arquivo);
             if (proximo == '=') {
-                info.atomo = MAIOR_IGUAL; // >=
+                info.atomo = MAIOR_IGUAL;
             } else {
                 ungetc(proximo, arquivo);
-                info.atomo = MAIOR; // >
+                info.atomo = MAIOR;
             }
             break;
         }
@@ -175,4 +215,3 @@ TInfoAtomo obter_atomo() {
 
     return info;
 }
-
