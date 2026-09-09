@@ -162,7 +162,6 @@ int linha_atual = 1;
 
 TInfoAtomo obter_atomo() {
     TInfoAtomo info;
-    info.linha = linha_atual;
     
     char c = fgetc(arquivo);
 
@@ -189,7 +188,9 @@ TInfoAtomo obter_atomo() {
             ungetc(proximo, arquivo);
         }
     }
-    
+
+        info.linha = linha_atual;
+
 
     // Fim de arquivo
     if (c == EOF) {
