@@ -1,3 +1,8 @@
+/*
+- Matheus Leonardo Cardoso Kroeff - 10426434
+- Naoto Ushizaki - 10437445
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -36,6 +41,16 @@ int eh_operador_adicao(TAtomo atomo);
 int eh_operador_multiplicacao(TAtomo atomo);
 
 TInfoAtomo lookahead;
+
+void consome(TAtomo atomo){
+    if(lookahead.atomo == atomo){
+        lookahead = obter_atomo();
+    } else {
+        printf("Erro sintatico na linha [%d] -> Expected: [%d] | Found: [%d]\n", lookahead.linha, atomo, lookahead.atomo);
+
+        exit(1);
+    }
+}
 
 // <programa> ::= algoritmo identificador ‘;’ <bloco> ‘.’
 void programa() {
