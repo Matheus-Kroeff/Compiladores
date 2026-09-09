@@ -69,6 +69,35 @@ typedef struct{
     }atributo;
 }TInfoAtomo;
 
+TAtomo checagem_palavra_reservada(char *lexema) {
+    if (strcmp(lexema, "algoritmo") == 0) return ALGORITMO;
+    if(strcmp(lexema, "caractere") == 0) return CARACTERE;
+    if(strcmp(lexema, "div") == 0) return DIV;
+    if(strcmp(lexema, "e") == 0) return E;
+    if(strcmp(lexema, "enquanto") == 0) return ENQUANTO;
+    if(strcmp(lexema, "entao") == 0) return ENTAO;
+    if(strcmp(lexema, "escreva") == 0) return ESCREVA;
+    if(strcmp(lexema, "faca") == 0) return FACA;
+    if(strcmp(lexema, "falso") == 0) return FALSO;
+    if(strcmp(lexema, "fim") == 0) return FIM;
+    if(strcmp(lexema, "funcao") == 0) return FUNCAO;
+    if(strcmp(lexema, "inicio") == 0) return INICIO;
+    if(strcmp(lexema, "inteiro") == 0) return INTEIRO;
+    if(strcmp(lexema, "leia") == 0) return LEIA;
+    if(strcmp(lexema, "logico") == 0) return LOGICO;
+    if(strcmp(lexema, "mod") == 0) return MOD;
+    if(strcmp(lexema, "ou") == 0) return OU;
+    if(strcmp(lexema, "procedimento") == 0) return PROCEDIMENTO;
+    if(strcmp(lexema, "se") == 0) return SE;
+    if(strcmp(lexema, "senao") == 0) return SENAO;
+    if(strcmp(lexema, "var") == 0) return VAR;
+    if(strcmp(lexema, "verdadeiro") == 0) return VERDADEIRO;
+    if(strcmp(lexema, "nao") == 0) return NAO;
+
+    return IDENTIFICADOR;
+    
+}
+
 TInfoAtomo obter_atomo();
 
 FILE *arquivo;
