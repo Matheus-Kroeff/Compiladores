@@ -123,6 +123,25 @@ TInfoAtomo obter_atomo() {
         c = fgetc(arquivo);
     }
 
+    // ignorar comentários
+    if (c == '{') {
+        char proximo = fgetc(arquivo);
+        if (proximo == '-') {
+            char atual = fgetc(arquivo);
+            char anterior = '\0';
+            while (!(anterior == '-' && atual == '}')) {
+                if (atual == '\n') linha_atual++;
+                anterior = atual;
+                atual = fgetc(arquivo);
+                if (atual == EOF) break;
+            }
+            return obter_atomo(); // Pega o próximo átomo após o comentário
+        } else {
+            ungetc(proximo, arquivo);
+        }
+    }
+    
+
     // Fim de arquivo
     if (c == EOF) {
         info.atomo = FIM_ARQUIVO;
