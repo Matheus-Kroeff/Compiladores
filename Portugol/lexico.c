@@ -183,11 +183,25 @@ TInfoAtomo obter_atomo() {
         return info;
     }
 
-    // Constantes Caractere
-    if (c == '\‘') {
+    // Constantes Caractere (aceita aspas retas ' e curvas ‘ ’)
+    if (c == '\'' || (unsigned char)c == 0xE2) { // 0xE2 é o primeiro byte das aspas curvas em UTF-8
+        if ((unsigned char)c == 0xE2) {
+            // Consome os outros dois bytes da aspa curva de abertura (ex: ‘)
+            fgetc(arquivo); 
+            fgetc(arquivo);
+        }
+        
         char ch = fgetc(arquivo);
-        char aspas = fgetc(arquivo); // Deve fechar com '\''
-        if (aspas == '\’') {
+        
+        // Verifica se o próximo caractere fecha a aspa (reta ou curva)
+        char prox1 = fgetc(arquivo);
+        if (prox1 == '\'') {
+            info.atomo = CONSTCHAR;
+            info.atributo.ch = ch;
+        } else if ((unsigned char)prox1 == 0xE2) {
+            // Consome os outros dois bytes da aspa curva de fechamento (ex: ’)
+            fgetc(arquivo);
+            fgetc(arquivo);
             info.atomo = CONSTCHAR;
             info.atributo.ch = ch;
         } else {
