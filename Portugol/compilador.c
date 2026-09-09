@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     // chama a análise sintática
     programa();
 
-    printf("Código rodou, nenhum erro encontrado.\n")
+    printf("Código rodou, nenhum erro encontrado.\n");
 
     fclose(arquivo);
     return 0;
