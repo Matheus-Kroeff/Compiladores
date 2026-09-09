@@ -6,6 +6,7 @@
 extern FILE *arquivo;
 extern TInfoAtomo lookahead;
 extern TInfoAtomo obter_atomo();
+extern void programa();
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
