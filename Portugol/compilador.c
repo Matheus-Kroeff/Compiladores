@@ -19,4 +19,15 @@ int main(int argc, char *argv[]) {
         printf("Erro ao abrir o arquivo: %s\n", argv[1]);
         return 1;
     }
+
+    // inicializa o lookahead
+    lookahead = obter_atomo();
+
+    // chama a análise sintática
+    programa();
+
+    printf("Código rodou, nenhum erro encontrado.\n")
+
+    fclose(arquivo);
+    return 0;
 }
