@@ -44,11 +44,10 @@ TInfoAtomo lookahead;
 
 void consome(TAtomo atomo){
     if(lookahead.atomo == atomo){
-        printf("Linha %d: Consumiu o átomo [%d]\n", lookahead.linha, lookahead.atomo);
+        printf("Linha %d: Consumiu o átomo [%s]\n", lookahead.linha, nomes_atomos[lookahead.atomo]);
         lookahead = obter_atomo();
     } else {
-        printf("Erro sintatico na linha [%d] -> Expected: [%d] | Found: [%d]\n", lookahead.linha, atomo, lookahead.atomo);
-
+        printf("Erro sintatico na linha %d -> Esperado: [%s] | Encontrado: [%s]\n", lookahead.linha, nomes_atomos[atomo], nomes_atomos[lookahead.atomo]);
         exit(1);
     }
 }

@@ -66,6 +66,55 @@ typedef enum {
 
 } TAtomo;
 
+const char *nomes_atomos[] = {
+    "ERRO",
+    "PONTO_VIRGULA",
+    "VIRGULA",
+    "DOIS_PONTOS",
+    "PONTO",
+    "SOMA",
+    "SUBTRACAO",
+    "MULTIPLICACAO",
+    "DIVISAO",
+    "MENOR",
+    "MAIOR",
+    "MENOR_IGUAL",
+    "MAIOR_IGUAL",
+    "IGUAL",
+    "ABRE_PARENTESES",
+    "FECHA_PARENTESES",
+    "ATRIBUICAO",
+    "DIFERENTE",
+    "ALGORITMO",
+    "CARACTERE",
+    "DIV",
+    "E",
+    "ENQUANTO",
+    "ENTAO",
+    "ESCREVA",
+    "FACA",
+    "FALSO",
+    "FIM",
+    "FUNCAO",
+    "INICIO",
+    "INTEIRO",
+    "LEIA",
+    "LOGICO",
+    "MOD",
+    "OU",
+    "PROCEDIMENTO",
+    "SE",
+    "SENAO",
+    "VAR",
+    "VERDADEIRO",
+    "NAO",
+    "CONSTINT",
+    "CONSTCHAR",
+    "COMENTARIO",
+    "FIM_ARQUIVO",
+    "IDENTIFICADOR"
+};
+
 typedef struct{
     TAtomo atomo;
     int linha;
