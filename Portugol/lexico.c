@@ -110,6 +110,7 @@ TInfoAtomo obter_atomo();
 FILE *arquivo;
 int linha_atual = 1;
 
+
 TInfoAtomo obter_atomo() {
     TInfoAtomo info;
     info.linha = linha_atual;
