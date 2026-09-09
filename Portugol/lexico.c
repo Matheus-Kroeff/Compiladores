@@ -76,7 +76,7 @@ typedef struct{
     }atributo;
 }TInfoAtomo;
 
-TAtomo checagem_palavra_reservada(char *lexema) {
+TAtomo confere_palavra_reservada(char *lexema) {
     if (strcmp(lexema, "algoritmo") == 0) return ALGORITMO;
     if(strcmp(lexema, "caractere") == 0) return CARACTERE;
     if(strcmp(lexema, "div") == 0) return DIV;

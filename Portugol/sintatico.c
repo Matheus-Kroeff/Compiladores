@@ -63,7 +63,7 @@ void programa() {
 
 // <bloco> ::= <declaração_variáveis> <declaração_de_rotinas> <comando_composto>
 void bloco() {
-    declaracao_variaveis();
+    declaracao_de_variaveis();
     declaracao_de_rotinas();
     comando_composto();
 }
