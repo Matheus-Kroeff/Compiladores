@@ -184,10 +184,10 @@ TInfoAtomo obter_atomo() {
     }
 
     // Constantes Caractere
-    if (c == '\'') {
+    if (c == '\‘') {
         char ch = fgetc(arquivo);
         char aspas = fgetc(arquivo); // Deve fechar com '\''
-        if (aspas == '\'') {
+        if (aspas == '\’') {
             info.atomo = CONSTCHAR;
             info.atributo.ch = ch;
         } else {
