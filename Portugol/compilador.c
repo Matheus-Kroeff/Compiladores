@@ -9,6 +9,7 @@
 #include "sintatico.c"
 
 extern FILE *arquivo;
+extern int linha_atual; 
 extern TInfoAtomo lookahead;
 extern TInfoAtomo obter_atomo();
 extern void programa();
@@ -31,7 +32,7 @@ int main(int argc, char *argv[]) {
     // chama a análise sintática
     programa();
 
-    printf("Código rodou, nenhum erro encontrado.\n");
+    printf("%d linhas analisadas, programa sintaticamente correto\n", linha_atual);
 
     fclose(arquivo);
     return 0;
