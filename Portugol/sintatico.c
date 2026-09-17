@@ -447,4 +447,3 @@ void fator() {
         fator();
     }
 }
-
