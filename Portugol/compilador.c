@@ -5,18 +5,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lexico.c"
-#include "sintatico.c"
+#include <string.h>
+#include <ctype.h>
+#include "lexical_analyser.c"
+#include "syntatic_analyser.c"
 
 extern FILE *arquivo;
-extern int linha_atual; 
 extern TInfoAtomo lookahead;
 extern TInfoAtomo obter_atomo();
-extern void programa();
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        printf("Uso correto: %s <arquivo_fonte.txt>\n", argv[0]);
+        printf("Uso correto: %s <input.txt>\n", argv[0]);
         return 1;
     }
 
@@ -32,8 +32,9 @@ int main(int argc, char *argv[]) {
     // chama a análise sintática
     programa();
 
-    printf("%d linhas analisadas, programa sintaticamente correto\n", linha_atual);
+    printf("Código rodou, nenhum erro encontrado. %d linhas analisadas -> programa sintaticamente correta\n", lookahead.linha);
 
     fclose(arquivo);
     return 0;
+
 }
