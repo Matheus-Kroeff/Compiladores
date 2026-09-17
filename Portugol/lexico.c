@@ -159,7 +159,6 @@ TInfoAtomo obter_atomo();
 FILE *arquivo;
 int linha_atual = 1;
 
-
 TInfoAtomo obter_atomo() {
     TInfoAtomo info;
     
@@ -171,10 +170,11 @@ TInfoAtomo obter_atomo() {
         c = fgetc(arquivo);
     }
 
-    // ignorar comentários
+    // Analisar comentarios + print:
     if (c == '{') {
         char proximo = fgetc(arquivo);
         if (proximo == '-') {
+            int line_comment = linha_atual;
             char atual = fgetc(arquivo);
             char anterior = '\0';
             while (!(anterior == '-' && atual == '}')) {
@@ -183,6 +183,7 @@ TInfoAtomo obter_atomo() {
                 atual = fgetc(arquivo);
                 if (atual == EOF) break;
             }
+            printf("#  %d:COMENTARIO\n", line_comment);
             return obter_atomo(); // Pega o próximo átomo após o comentário
         } else {
             ungetc(proximo, arquivo);
@@ -190,7 +191,6 @@ TInfoAtomo obter_atomo() {
     }
 
         info.linha = linha_atual;
-
 
     // Fim de arquivo
     if (c == EOF) {
