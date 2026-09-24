@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "lexical_analyser.c"
-#include "syntatic_analyser.c"
+#include "lexico.c"
+#include "sintatico.c"
 
 extern FILE *arquivo;
 extern TInfoAtomo lookahead;
