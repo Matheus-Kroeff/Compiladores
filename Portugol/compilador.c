@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include "lexico.c"
 #include "sintatico.c"
+#include "semantico.c"
 
 extern FILE *arquivo;
 extern TInfoAtomo lookahead;

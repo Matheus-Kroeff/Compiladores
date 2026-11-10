@@ -6,12 +6,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "semantico.c"
+
+// --- Variáveis Globais de Controle ---
+int escopo_atual = 0;    // 0 = global, 1 = local
+int deslocamento = 0;    // endereço relativo para AMEM / tabela de símbolos
 
 // --- Protótipos das Funções Sintáticas ---
 void consome(TAtomo atomo);
 void programa();
 void bloco();
-void declaracao_de_variaveis();
+int declaracao_de_variaveis();
 void lista_variaveis();
 void declaracao_de_rotinas();
 void declaracao_de_funcao();
@@ -67,11 +72,15 @@ void consome(TAtomo atomo){
 
 // <programa> ::= algoritmo identificador ‘;’ <bloco> ‘.’
 void programa() {
+    printf("INPP\n"); // Instrução de inicio de programa
+
     consome(ALGORITMO);
     consome(IDENTIFICADOR);
     consome(PONTO_VIRGULA);
     bloco();
     consome(PONTO);
+
+    printf("PARA\n"); //Instrução de fim de programa?
 }
 
 // <bloco> ::= <declaração_variáveis> <declaração_de_rotinas> <comando_composto>
@@ -82,7 +91,10 @@ void bloco() {
 }
 
 // <declaração_variáveis> ::= [ var <lista_variaveis> ‘;’ { <lista_variaveis> ‘;’ } ]
-void declaracao_de_variaveis() {
+int declaracao_de_variaveis() {
+    int num_vars = 0;
+    deslocamento = 0;
+
     // Verifica se VAR existe
     if(lookahead.atomo == VAR) {
         consome(VAR);
@@ -93,18 +105,41 @@ void declaracao_de_variaveis() {
             lista_variaveis();
             consome(PONTO_VIRGULA);
         }
+
+        num_vars = deslocamento;
+        if (num_vars > 0) {
+            printf("AMEM %d\n", num_vars);
+        }
     }
+    return num_vars;
 }
 
 // <lista_variaveis> ::= identificador { ‘,’ identificador } ‘:’ <tipo>
 void lista_variaveis() {
+    char IDs[50][16]; // Buffer temporário para acumular os nomes antes de definir o tipo
+    int qtd = 0;
+
+    // Guarda o primeiro identificador antes de consumir
+    strncpy(IDs[qtd++], lookahead.atributo.id, 15);
+    IDs[qtd-1][15] = '\0';
+
     consome(IDENTIFICADOR);
     while(lookahead.atomo == VIRGULA) {
         consome(VIRGULA);
+
+        strncpy(IDs[qtd++], lookahead.atributo.id, 15);
+        IDs[qtd-1][15] = '\0';
+
         consome(IDENTIFICADOR);
     }
     consome(DOIS_PONTOS);
     tipo();
+
+    // Insere todas as variáveis acumuladas na tabela de símbolos
+    for (int i = 0; i < qtd; i++) {
+        insere(IDs[i], CAT_VARIAVEL, escopo_atual, deslocamento, lookahead.linha);
+        deslocamento++;
+    }
 }
 
 // <declaracao_de_rotinas> ::= { <declaração_de_função>|<declaração_de_procedimento> }
@@ -122,19 +157,41 @@ void declaracao_de_rotinas() {
 void declaracao_de_funcao() {
     consome(FUNCAO);
     tipo();
+
+    char id[16];
+    strncpy(id, lookahead.atributo.id, 15);
+    id[15] = '\0';
+    insere(id, CAT_FUNCAO, escopo_atual, 0, lookahead.linha);
+
     consome(IDENTIFICADOR);
+
+    escopo_atual = 1; // Entra no escopo local
     parametros_formais();
     declaracao_de_variaveis();
     comando_composto();
+
+    remove_locais();  // Limpa variáveis e parâmetros locais ao sair
+    escopo_atual = 0; // Retorna ao escopo global
 }
 
 // <declaracao_de_procedimento> ::= procedimento identificador <parametros_formais> <declaracao_de_variaveis> <comando_composto>
 void declaracao_de_procedimento() {
     consome(PROCEDIMENTO);
+
+    char id[16];
+    strncpy(id, lookahead.atributo.id, 15);
+    id[15] = '\0';
+    insere(id, CAT_PROCEDIMENTO, escopo_atual, 0, lookahead.linha);
+
     consome(IDENTIFICADOR);
+
+    escopo_atual = 1; // Entra no escopo local
     parametros_formais();
     declaracao_de_variaveis();
     comando_composto();
+
+    remove_locais();  // Limpa variáveis e parâmetros locais ao sair
+    escopo_atual = 0; // Retorna ao escopo global
 }
 
 // <tipo> ::= caractere | inteiro | logico
@@ -167,7 +224,29 @@ void parametro_formal() {
     if(lookahead.atomo == VAR) {
         consome(VAR);
     }
-    lista_variaveis();
+
+    // Tratamento de parâmetros declarados
+    char IDs[50][16];
+    int qtd = 0;
+
+    strncpy(IDs[qtd++], lookahead.atributo.id, 15);
+    IDs[qtd-1][15] = '\0';
+    consome(IDENTIFICADOR);
+
+    while(lookahead.atomo == VIRGULA) {
+        consome(VIRGULA);
+        strncpy(IDs[qtd++], lookahead.atributo.id, 15);
+        IDs[qtd-1][15] = '\0';
+        consome(IDENTIFICADOR);
+    }
+    
+    consome(DOIS_PONTOS);
+    tipo();
+
+    for (int i = 0; i < qtd; i++) {
+        insere(IDs[i], CAT_PARAMETRO, escopo_atual, deslocamento, lookahead.linha);
+        deslocamento++;
+    }
 }
 
 // <comando_composto> ::= inicio <comando> { ‘;’ <comando> } fim
