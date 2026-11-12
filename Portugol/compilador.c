@@ -33,7 +33,9 @@ int main(int argc, char *argv[]) {
     // chama a análise sintática
     programa();
 
-    printf("Código rodou, nenhum erro encontrado. %d linhas analisadas -> programa sintaticamente correta\n", lookahead.linha);
+    // imprime os símbolos globais restantes e liberta a memória alocada
+    imprime_tabela();
+    libera_tabela();
 
     fclose(arquivo);
     return 0;
