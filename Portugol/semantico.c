@@ -31,7 +31,7 @@ int hashMack(char *s);
 void libera_tabela();
 TNo *busca(char *id);
 void insere(char *id, TCategoria categoria, int escopo, int endereco, int rotulo, int linha);
-void atualiza_enderecos_rotina(char *id_rotina, int num_params)
+void atualiza_enderecos_rotina(char *id_rotina, int num_params);
 void remove_locais();
 void imprime_tabela();
 
@@ -45,7 +45,7 @@ TNo *busca(char *id) {
 }
 
 // Inserção na Tabela de Símbolos
-void insere(char *id, TCategoria categoria, int escopo, int endereco, int linha) {
+void insere(char *id, TCategoria categoria, int escopo, int endereco, int rotulo, int linha) {
     int i = hashMack(id);
 
     // Verifica se já existe um nó com o mesmo ID e no mesmo escopo
