@@ -10,8 +10,12 @@
 
 // --- Variáveis Globais de Controle ---
 int escopo_atual = 0;    // 0 = global, 1 = local
-int deslocamento = 0;    // endereço relativo para AMEM / tabela de símbolos
-int num_rotinas = 0;     // contador para rótulos de rotinas (DSVS)
+int deslocamento = 0;    // endereço relativo corrente das variáveis
+int rotulo_atual = 1;    // contador único para todos os rótulos do programa (L1, L2, ...)
+
+int proximo_rotulo() {
+    return rotulo_atual++;
+}
 
 // --- Protótipos das Funções Sintáticas ---
 void consome(TAtomo atomo);
@@ -61,32 +65,34 @@ void consome(TAtomo atomo){
 
 // <programa> ::= algoritmo identificador ‘;’ <bloco> ‘.’
 void programa() {
-    printf("INPP\n"); // Instrução de inicio de programa
-
+    printf("INPP\n");
+    
     consome(ALGORITMO);
     consome(IDENTIFICADOR);
     consome(PONTO_VIRGULA);
+    
     bloco();
+    
     consome(PONTO);
-
-    printf("PARA\n"); //Instrução de fim de programa?
 }
 
 // <bloco> ::= <declaração_variáveis> <declaração_de_rotinas> <comando_composto>
 void bloco() {
     int vars_globais = declaracao_de_variaveis();
-
+    
     if (lookahead.atomo == FUNCAO || lookahead.atomo == PROCEDIMENTO) {
-        printf("DSVS L1\n");
+        int rotulo_inicio = proximo_rotulo();
+        printf("DSVS L%d\n", rotulo_inicio);
         declaracao_de_rotinas();
-        printf("L1: NADA\n");
+        printf("L%d: NADA\n", rotulo_inicio);
     }
-
+    
     comando_composto();
-
+    
     if (vars_globais > 0) {
         printf("DMEM %d\n", vars_globais);
     }
+    printf("PARA\n");
 }
 
 // <declaração_variáveis> ::= [ var <lista_variaveis> ‘;’ { <lista_variaveis> ‘;’ } ]
@@ -161,20 +167,28 @@ void declaracao_de_funcao() {
     strncpy(id, lookahead.atributo.id, 15);
     id[15] = '\0';
     
-    insere(id, CAT_FUNCAO, escopo_atual, 0, linha_id);
+    int rotulo_rotina = proximo_rotulo();
+    // Guarda o número do rótulo no campo endereço da rotina na tabela de símbolos
+    insere(id, CAT_FUNCAO, escopo_atual, rotulo_rotina, linha_id);
     consome(IDENTIFICADOR);
     
     escopo_atual = 1;
-    deslocamento = 0; // Zerado no início da rotina para escopo local
+    deslocamento = 0; // Zerado no início da rotina para contar parâmetros
     
     parametros_formais();
+    int num_params = deslocamento; // Quantidade de parâmetros formais declarados
+    
+    printf("L%d: ENPR 1\n", rotulo_rotina);
+    
+    deslocamento = 0; // Reinicia deslocamento para as variáveis locais começarem em 0
     int vars_locais = declaracao_de_variaveis();
+    
     comando_composto();
     
     if (vars_locais > 0) {
         printf("DMEM %d\n", vars_locais);
     }
-    printf("RTPR\n");
+    printf("RTPR 1,%d\n", num_params);
     
     remove_locais();
     escopo_atual = 0;
@@ -189,20 +203,28 @@ void declaracao_de_procedimento() {
     strncpy(id, lookahead.atributo.id, 15);
     id[15] = '\0';
     
-    insere(id, CAT_PROCEDIMENTO, escopo_atual, 0, linha_id);
+    int rotulo_rotina = proximo_rotulo();
+    // Guarda o número do rótulo no campo endereço da rotina na tabela de símbolos
+    insere(id, CAT_PROCEDIMENTO, escopo_atual, rotulo_rotina, linha_id);
     consome(IDENTIFICADOR);
     
     escopo_atual = 1;
-    deslocamento = 0; // Zerado no início da rotina para escopo local
+    deslocamento = 0; // Zerado no início da rotina para contar parâmetros
     
     parametros_formais();
+    int num_params = deslocamento; // Quantidade de parâmetros formais declarados
+    
+    printf("L%d: ENPR 1\n", rotulo_rotina);
+    
+    deslocamento = 0; // Reinicia deslocamento para as variáveis locais começarem em 0
     int vars_locais = declaracao_de_variaveis();
+    
     comando_composto();
     
     if (vars_locais > 0) {
         printf("DMEM %d\n", vars_locais);
     }
-    printf("RTPR\n");
+    printf("RTPR 1,%d\n", num_params);
     
     remove_locais();
     escopo_atual = 0;
@@ -229,7 +251,6 @@ void parametros_formais() {
             parametro_formal();
         }
     }
-    
     consome(FECHA_PARENTESES);
 }
 
