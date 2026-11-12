@@ -14,6 +14,7 @@ typedef enum { CAT_VARIAVEL, CAT_PARAMETRO, CAT_FUNCAO, CAT_PROCEDIMENTO } TCate
 typedef struct _TNo {
    char ID[16];
    int endereço;       
+   int rotulo;
    TCategoria categoria;
    int escopo;          // 0 = global, 1 = local
    struct _TNo *prox;
@@ -29,7 +30,8 @@ TTabelaSimbolos tabela;   // global: começa toda NULL
 int hashMack(char *s); 
 void libera_tabela();
 TNo *busca(char *id);
-void insere(char *id, TCategoria categoria, int escopo, int endereco, int linha);
+void insere(char *id, TCategoria categoria, int escopo, int endereco, int rotulo, int linha);
+void atualiza_enderecos_rotina(char *id_rotina, int num_params)
 void remove_locais();
 void imprime_tabela();
 
@@ -68,10 +70,29 @@ void insere(char *id, TCategoria categoria, int escopo, int endereco, int linha)
     novo->categoria = categoria;
     novo->escopo = escopo;
     novo->endereço = endereco;
+   novo->rotulo = rotulo;
 
     // Inserção no início da lista encadeada da entrada i
     novo->prox = tabela.entradas[i];
     tabela.entradas[i] = novo;
+}
+
+// Ajusta endereços dos parâmetros para a convenção MEPA -(n+2) .. -3 e o retorno da função para -(n+3)
+void atualiza_enderecos_rotina(char *id_rotina, int num_params) {
+    for (int i = 0; i < PRIME_NUMER; i++) {
+        for (TNo *p = tabela.entradas[i]; p != NULL; p = p->prox) {
+            if (p->escopo == 1 && p->categoria == CAT_PARAMETRO) {
+                // O parâmetro 0 passa a -(num_params + 2), o parâmetro (num_params - 1) passa a -3
+                p->endereço = p->endereço - (num_params + 2);
+            }
+        }
+    }
+
+    // Se for função, atualiza o endereço do valor de retorno para -(num_params + 3)
+    TNo *rotina = busca(id_rotina);
+    if (rotina != NULL && rotina->categoria == CAT_FUNCAO) {
+        rotina->endereço = -(num_params + 3);
+    }
 }
 
 // Remove todos os símbolos com escopo local (escopo == 1) ao fim de uma rotina
@@ -106,9 +127,12 @@ void imprime_tabela() {
             if (p->categoria == CAT_VARIAVEL || p->categoria == CAT_PARAMETRO) {
                 printf("[%d] ID: %-15s | Categoria: %-12s | Escopo: %d | Endereço: %d\n", 
                        i, p->ID, nomes_categorias[p->categoria], p->escopo, p->endereço);
+            } else if (p->categoria == CAT_FUNCAO) {
+                printf("[%d] ID: %-15s | Categoria: %-12s | Escopo: %d | Rótulo: L%d | Endereço Retorno: %d\n", 
+                       i, p->ID, nomes_categorias[p->categoria], p->escopo, p->rotulo, p->endereço);
             } else {
-                printf("[%d] ID: %-15s | Categoria: %-12s | Escopo: %d\n", 
-                       i, p->ID, nomes_categorias[p->categoria], p->escopo);
+                printf("[%d] ID: %-15s | Categoria: %-12s | Escopo: %d | Rótulo: L%d\n", 
+                       i, p->ID, nomes_categorias[p->categoria], p->escopo, p->rotulo);
             }
             p = p->prox;
         }
