@@ -177,6 +177,8 @@ void declaracao_de_funcao() {
     
     parametros_formais();
     int num_params = deslocamento; // Quantidade de parâmetros formais declarados
+
+    atualiza_enderecos_rotina(id, num_params);
     
     printf("L%d: ENPR 1\n", rotulo_rotina);
     
@@ -213,6 +215,8 @@ void declaracao_de_procedimento() {
     
     parametros_formais();
     int num_params = deslocamento; // Quantidade de parâmetros formais declarados
+
+    atualiza_enderecos_rotina(id, num_params);
     
     printf("L%d: ENPR 1\n", rotulo_rotina);
     
