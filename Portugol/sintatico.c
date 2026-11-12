@@ -128,7 +128,7 @@ void lista_variaveis(TCategoria cat) {
     temp_id[15] = '\0';
     consome(IDENTIFICADOR);
     
-    insere(temp_id, cat, escopo_atual, deslocamento++, linha_id);
+    insere(temp_id, cat, escopo_atual, deslocamento++, 0, linha_id);
 
     // Processa identificadores adicionais separados por vírgula
     while(lookahead.atomo == VIRGULA) {
@@ -139,7 +139,7 @@ void lista_variaveis(TCategoria cat) {
         temp_id[15] = '\0';
         consome(IDENTIFICADOR);
         
-        insere(temp_id, cat, escopo_atual, deslocamento++, linha_id);
+        insere(temp_id, cat, escopo_atual, deslocamento++, 0, linha_id);
     }
     
     consome(DOIS_PONTOS);
@@ -169,7 +169,7 @@ void declaracao_de_funcao() {
     
     int rotulo_rotina = proximo_rotulo();
     // Guarda o número do rótulo no campo endereço da rotina na tabela de símbolos
-    insere(id, CAT_FUNCAO, escopo_atual, rotulo_rotina, linha_id);
+    insere(id, CAT_FUNCAO, escopo_atual, 0, rotulo_rotina, linha_id);
     consome(IDENTIFICADOR);
     
     escopo_atual = 1;
@@ -205,7 +205,7 @@ void declaracao_de_procedimento() {
     
     int rotulo_rotina = proximo_rotulo();
     // Guarda o número do rótulo no campo endereço da rotina na tabela de símbolos
-    insere(id, CAT_PROCEDIMENTO, escopo_atual, rotulo_rotina, linha_id);
+    insere(id, CAT_PROCEDIMENTO, escopo_atual, 0, rotulo_rotina, linha_id);
     consome(IDENTIFICADOR);
     
     escopo_atual = 1;
