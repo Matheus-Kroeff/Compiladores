@@ -38,7 +38,7 @@ void comando_saida();
 void comando_condicional();
 void comando_repeticao();
 void chamada_procedimento();
-void lista_expressao();
+int lista_expressao();
 void expressao();
 void operador_relacional();
 void expressao_simples();
@@ -87,13 +87,14 @@ void programa() {
 // <bloco> ::= <declaração_variáveis> <declaração_de_rotinas> <comando_composto>
 void bloco() {
     int vars_globais = declaracao_de_variaveis();
+    int rotulo_inicio = proximo_rotulo();
     
     if (lookahead.atomo == FUNCAO || lookahead.atomo == PROCEDIMENTO) {
-        int rotulo_inicio = proximo_rotulo();
         printf("DSVS L%d\n", rotulo_inicio);
         declaracao_de_rotinas();
-        printf("L%d: NADA\n", rotulo_inicio);
     }
+    // Sempre emite um rótulo antes do corpo principal para garantir execução no interpretador MEPA
+    printf("L%d: NADA\n", rotulo_inicio);
     
     comando_composto();
     
@@ -343,6 +344,10 @@ void comando() {
             }
 
             printf("CHPR L%d,%d\n", no->rotulo, escopo_atual);
+
+            if (no->num_params > 0) {
+                printf("DMEM %d\n", no->num_params);
+            }
         }
     } else {
         consome(INICIO);
@@ -646,7 +651,7 @@ void operador_multiplicacao() {
             consome(E);
             break;
         default:
-            consome(DIVISAO);
+            consome(DIV);
             break;
     }
 }
