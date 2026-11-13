@@ -12,6 +12,7 @@
 int escopo_atual = 0;    // 0 = global, 1 = local
 int deslocamento = 0;    // endereço relativo corrente das variáveis
 int rotulo_atual = 1;    // contador único para todos os rótulos do programa (L1, L2, ...)
+TNo *rotina_atual = NULL;
 
 int proximo_rotulo() {
     return rotulo_atual++;
@@ -168,21 +169,21 @@ void declaracao_de_funcao() {
     id[15] = '\0';
     
     int rotulo_rotina = proximo_rotulo();
-    // Guarda o número do rótulo no campo endereço da rotina na tabela de símbolos
     insere(id, CAT_FUNCAO, escopo_atual, 0, rotulo_rotina, linha_id);
+    rotina_atual = busca(id); // Registra que estamos dentro desta função
     consome(IDENTIFICADOR);
     
     escopo_atual = 1;
-    deslocamento = 0; // Zerado no início da rotina para contar parâmetros
+    deslocamento = 0;
     
     parametros_formais();
-    int num_params = deslocamento; // Quantidade de parâmetros formais declarados
-
+    int num_params = deslocamento;
+    
     atualiza_enderecos_rotina(id, num_params);
     
     printf("L%d: ENPR 1\n", rotulo_rotina);
     
-    deslocamento = 0; // Reinicia deslocamento para as variáveis locais começarem em 0
+    deslocamento = 0;
     int vars_locais = declaracao_de_variaveis();
     
     comando_composto();
@@ -193,6 +194,7 @@ void declaracao_de_funcao() {
     printf("RTPR 1,%d\n", num_params);
     
     remove_locais();
+    rotina_atual = NULL; // Limpa ao sair da função
     escopo_atual = 0;
 }
 
@@ -290,10 +292,35 @@ void comando() {
     } else if (lookahead.atomo == ENQUANTO) {
         comando_repeticao();
     } else if (lookahead.atomo == IDENTIFICADOR) {
+        char id[16];
+        int linha_id = lookahead.linha;
+        strncpy(id, lookahead.atributo.id, 15);
+        id[15] = '\0';
+
         consome(IDENTIFICADOR);
+
+        TNo *no = busca(id);
+        if (no == NULL) {
+            printf("Erro semantico na linha %d -> Identificador '%s' nao declarado\n", linha_id, id);
+            libera_tabela();
+            exit(1);
+        }
+
         if (lookahead.atomo == ATRIBUICAO) {
+            bool pode_atribuir = (no->categoria == CAT_VARIAVEL) ||
+                                 (no->categoria == CAT_PARAMETRO) ||
+                                 (no->categoria == CAT_FUNCAO && no == rotina_atual);
+            if (!pode_atribuir) {
+                printf("Erro semantico na linha %d -> Identificador '%s' nao pode receber atribuicao neste escopo\n", linha_id, id);
+                libera_tabela();
+                exit(1);
+            }
+
             consome(ATRIBUICAO);
             expressao();
+
+            int nivel = (no->categoria == CAT_FUNCAO) ? 1 : no->escopo;
+            printf("ARMZ %d,%d\n", nivel, no->endereço);
         } else {
             if (lookahead.atomo == ABRE_PARENTESES) {
                 consome(ABRE_PARENTESES);
@@ -302,7 +329,7 @@ void comando() {
             }
         }
     } else {
-        consome(INICIO); // Forçar erro
+        consome(INICIO);
     }
 }
 
@@ -389,8 +416,26 @@ int eh_operador_relacional(TAtomo atomo) {
 void expressao() {
     expressao_simples();
     if (eh_operador_relacional(lookahead.atomo)) {
+        TAtomo op = lookahead.atomo;
         operador_relacional();
         expressao_simples();
+
+        switch (op) {
+            case IGUAL:       
+                printf("CMIG\n"); break;
+            case DIFERENTE:   
+                printf("CMDG\n"); break;
+            case MENOR:       
+                printf("CMME\n"); break;
+            case MENOR_IGUAL: 
+                printf("CMEG\n"); break;
+            case MAIOR:       
+                printf("CMMA\n"); break;
+            case MAIOR_IGUAL: 
+                printf("CMAG\n"); break;
+            default: 
+                break;
+        }
     }
 }
 
@@ -424,11 +469,24 @@ void operador_relacional() {
 
 // <expressão_simples> ::= <termo> { <operador_adição> <termo> }
 void expressao_simples() {
-
     termo();
     while (eh_operador_adicao(lookahead.atomo)) {
+        TAtomo op = lookahead.atomo;
         operador_adicao();
         termo();
+
+        switch (op) {
+            case SOMA:      
+                printf("SOMA\n"); break;
+            case SUBTRACAO: 
+                printf("SUBT\n"); break;
+            case OU:        
+                printf("DISJ\n"); break;
+            case MOD:       
+                printf("MODI\n"); break;
+            default: 
+                break;
+        }
     }
 }
 
@@ -471,19 +529,26 @@ void operador_adicao() {
 void termo() {
     fator();
     while (eh_operador_multiplicacao(lookahead.atomo)) {
+        TAtomo op = lookahead.atomo;
         operador_multiplicacao();
         fator();
+
+        switch (op) {
+            case MULTIPLICACAO: 
+                printf("MULT\n"); break;
+            case DIVISAO:
+            case DIV:
+                printf("DIVI\n"); break;
+            case E:             
+                printf("CONJ\n"); break;
+            default: 
+                break;
+        }
     }
 }
 
 int eh_operador_multiplicacao(TAtomo atomo) {
-    if( atomo == MULTIPLICACAO ||
-        atomo == DIVISAO ||
-        atomo == E) {
-            return 1;
-        } else {
-            return 0;
-        }
+    return (atomo == MULTIPLICACAO || atomo == DIVISAO || atomo == DIV || atomo == E);
 }
 
 // <operador_multiplicação> ::= ‘*’ | div | e
@@ -494,6 +559,9 @@ void operador_multiplicacao() {
             break;
         case DIVISAO:
             consome(DIVISAO);
+            break;
+        case DIV:           
+            consome(DIV); 
             break;
         case E:
             consome(E);
@@ -522,13 +590,13 @@ void fator() {
         }
 
         if (lookahead.atomo == ABRE_PARENTESES) {
-            // TODO: chamada de função
             consome(ABRE_PARENTESES);
             lista_expressao();
             consome(FECHA_PARENTESES);
         } else {
             if (no->categoria == CAT_VARIAVEL || no->categoria == CAT_PARAMETRO) {
                 printf("CRVL %d,%d\n", no->escopo, no->endereço);
+            } else if (no->categoria == CAT_FUNCAO) {
             } else {
                 printf("Erro semantico na linha %d -> Uso invalido do identificador '%s'\n", linha_id, id);
                 libera_tabela();
@@ -540,7 +608,9 @@ void fator() {
         consome(CONSTINT);
         printf("CRCT %d\n", valor);
     } else if (lookahead.atomo == CONSTCHAR) {
+        char ch = lookahead.atributo.ch;
         consome(CONSTCHAR);
+        printf("CRCT %d\n", ch);
     } else if (lookahead.atomo == ABRE_PARENTESES) {
         consome(ABRE_PARENTESES);
         expressao();
