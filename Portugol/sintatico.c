@@ -46,6 +46,7 @@ void operador_adicao();
 void termo();
 void operador_multiplicacao();
 void fator();
+void erro_semantico(int linha, const char *msg, const char *id);
 
 int eh_operador_relacional(TAtomo atomo);
 int eh_operador_adicao(TAtomo atomo);
@@ -62,6 +63,12 @@ void consome(TAtomo atomo){
         libera_tabela();
         exit(1);
     }
+}
+
+void erro_semantico(int linha, const char *msg, const char *id) {
+    printf("Erro semantico na linha %d -> %s '%s'\n", linha, msg, id);
+    libera_tabela();
+    exit(1);
 }
 
 // <programa> ::= algoritmo identificador ‘;’ <bloco> ‘.’
@@ -344,11 +351,42 @@ void comando_atribuicao() {
 void comando_entrada() {
     consome(LEIA);
     consome(ABRE_PARENTESES);
+
+    char id[16];
+    int linha_id = lookahead.linha;
+    strncpy(id, lookahead.atributo.id, 15);
+    id[15] = '\0';
     consome(IDENTIFICADOR);
-    while(lookahead.atomo == VIRGULA) {
-        consome(VIRGULA);
-        consome(IDENTIFICADOR);
+
+    TNo *no = busca(id);
+    if (no == NULL) {
+        erro_semantico(linha_id, "Identificador nao declarado", id);
     }
+    if (no->categoria != CAT_VARIAVEL && no->categoria != CAT_PARAMETRO) {
+        erro_semantico(linha_id, "Identificador invalido para leitura", id);
+    }
+    printf("LEIT\n");
+    printf("ARMZ %d,%d\n", no->escopo, no->endereço);
+
+    while (lookahead.atomo == VIRGULA) {
+        consome(VIRGULA);
+
+        linha_id = lookahead.linha;
+        strncpy(id, lookahead.atributo.id, 15);
+        id[15] = '\0';
+        consome(IDENTIFICADOR);
+
+        no = busca(id);
+        if (no == NULL) {
+            erro_semantico(linha_id, "Identificador nao declarado", id);
+        }
+        if (no->categoria != CAT_VARIAVEL && no->categoria != CAT_PARAMETRO) {
+            erro_semantico(linha_id, "Identificador invalido para leitura", id);
+        }
+        printf("LEIT\n");
+        printf("ARMZ %d,%d\n", no->escopo, no->endereço);
+    }
+
     consome(FECHA_PARENTESES);
 }
 
@@ -356,28 +394,57 @@ void comando_entrada() {
 void comando_saida() {
     consome(ESCREVA);
     consome(ABRE_PARENTESES);
-    lista_expressao();
+
+    expressao();
+    printf("IMPR\n");
+    while (lookahead.atomo == VIRGULA) {
+        consome(VIRGULA);
+        expressao();
+        printf("IMPR\n");
+    }
+
     consome(FECHA_PARENTESES);
 }
 
 // <comando_condicional> ::= se <expressão> entao <comando> [ senao <comando> ]
 void comando_condicional() {
+    int rotulo_falso = proximo_rotulo();
+
     consome(SE);
     expressao();
+    printf("DSVF L%d\n", rotulo_falso);
+
     consome(ENTAO);
     comando();
-    if(lookahead.atomo == SENAO) {
+
+    if (lookahead.atomo == SENAO) {
+        int rotulo_fim = proximo_rotulo();
+        printf("DSVS L%d\n", rotulo_fim);
+        printf("L%d: NADA\n", rotulo_falso);
+
         consome(SENAO);
         comando();
+
+        printf("L%d: NADA\n", rotulo_fim);
+    } else {
+        printf("L%d: NADA\n", rotulo_falso);
     }
 }
 
 // <comando_repeticao> ::= enquanto <expressão> faca <comando>
 void comando_repeticao() {
+    int rotulo_inicio = proximo_rotulo();
+    int rotulo_fim = proximo_rotulo();
+
     consome(ENQUANTO);
+    printf("L%d: NADA\n", rotulo_inicio);
     expressao();
+    printf("DSVF L%d\n", rotulo_fim);
+
     consome(FACA);
     comando();
+    printf("DSVS L%d\n", rotulo_inicio);
+    printf("L%d: NADA\n", rotulo_fim);
 }
 
 // <chamada_procedimento> ::= identificador [ ‘(’ <lista_expressão> ‘)’ ]
