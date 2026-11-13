@@ -58,8 +58,12 @@ void consome(TAtomo atomo){
     if(lookahead.atomo == atomo){
         lookahead = obter_atomo();
     } else {
-        printf("Erro sintatico na linha %d -> Esperado: [%s] | Encontrado: [%s]\n", 
-               lookahead.linha, nomes_atomos[atomo], nomes_atomos[lookahead.atomo]);
+        if (lookahead.atomo == ERRO) {
+            printf("Erro lexico na linha %d\n", lookahead.linha);
+        } else {
+            printf("Erro sintatico na linha %d -> Esperado: [%s] | Encontrado: [%s]\n", 
+                   lookahead.linha, nomes_atomos[atomo], nomes_atomos[lookahead.atomo]);
+        }
         libera_tabela();
         exit(1);
     }
@@ -327,7 +331,6 @@ void comando() {
             int nivel = (no->categoria == CAT_FUNCAO) ? 1 : no->escopo;
             printf("ARMZ %d,%d\n", nivel, no->endereço);
         } else {
-            // Chamada de procedimento (com ou sem parênteses)
             if (no->categoria != CAT_PROCEDIMENTO) {
                 erro_semantico(linha_id, "Identificador nao eh um procedimento", id);
             }
@@ -335,7 +338,9 @@ void comando() {
             int args_passados = 0;
             if (lookahead.atomo == ABRE_PARENTESES) {
                 consome(ABRE_PARENTESES);
-                args_passados = lista_expressao();
+                if (lookahead.atomo != FECHA_PARENTESES) {
+                    args_passados = lista_expressao();
+                }
                 consome(FECHA_PARENTESES);
             }
 
@@ -344,7 +349,6 @@ void comando() {
             }
 
             printf("CHPR L%d\n", no->rotulo);
-
             if (no->num_params > 0) {
                 printf("DMEM %d\n", no->num_params);
             }
@@ -672,14 +676,16 @@ void fator() {
         }
 
         if (lookahead.atomo == ABRE_PARENTESES) {
-            // Chamada de função com argumentos
             if (no->categoria != CAT_FUNCAO) {
                 erro_semantico(linha_id, "Identificador nao eh uma funcao", id);
             }
 
             printf("AMEM 1\n");
             consome(ABRE_PARENTESES);
-            int args_passados = lista_expressao();
+            int args_passados = 0;
+            if (lookahead.atomo != FECHA_PARENTESES) {
+                args_passados = lista_expressao();
+            }
             consome(FECHA_PARENTESES);
 
             if (args_passados != no->num_params) {
@@ -694,7 +700,6 @@ void fator() {
             if (no->categoria == CAT_VARIAVEL || no->categoria == CAT_PARAMETRO) {
                 printf("CRVL %d,%d\n", no->escopo, no->endereço);
             } else if (no->categoria == CAT_FUNCAO) {
-                // Chamada de função sem argumentos
                 if (no->num_params != 0) {
                     erro_semantico(linha_id, "Numero incorreto de argumentos na chamada de", id);
                 }
@@ -729,7 +734,15 @@ void fator() {
             case SOMA:      consome(SOMA); break;
             case SUBTRACAO: consome(SUBTRACAO); break;
             case NAO:       consome(NAO); break;
-            default:        consome(SOMA); break;
+            default:
+                if (lookahead.atomo == ERRO) {
+                    printf("Erro lexico na linha %d\n", lookahead.linha);
+                } else {
+                    printf("Erro sintatico na linha %d -> Esperado: expressao | Encontrado: [%s]\n",
+                           lookahead.linha, nomes_atomos[lookahead.atomo]);
+                }
+                libera_tabela();
+                exit(1);
         }
         
         fator();
