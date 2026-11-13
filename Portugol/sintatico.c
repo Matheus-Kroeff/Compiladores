@@ -506,40 +506,66 @@ void operador_multiplicacao() {
 
 // <fator> ::= identificador [ ‘(’ <lista_expressão> ‘)’ ] | constint | constchar | ‘(’ <expressão> ‘)’ | ( ‘+’ | ‘-’ | nao ) <fator> | verdadeiro | falso
 void fator() {
-    if(lookahead.atomo == IDENTIFICADOR) {
+    if (lookahead.atomo == IDENTIFICADOR) {
+        char id[16];
+        int linha_id = lookahead.linha;
+        strncpy(id, lookahead.atributo.id, 15);
+        id[15] = '\0';
+        
         consome(IDENTIFICADOR);
-        if(lookahead.atomo == ABRE_PARENTESES) {
+
+        TNo *no = busca(id);
+        if (no == NULL) {
+            printf("Erro semantico na linha %d -> Identificador '%s' nao declarado\n", linha_id, id);
+            libera_tabela();
+            exit(1);
+        }
+
+        if (lookahead.atomo == ABRE_PARENTESES) {
+            // TODO: chamada de função
             consome(ABRE_PARENTESES);
             lista_expressao();
             consome(FECHA_PARENTESES);
+        } else {
+            if (no->categoria == CAT_VARIAVEL || no->categoria == CAT_PARAMETRO) {
+                printf("CRVL %d,%d\n", no->escopo, no->endereço);
+            } else {
+                printf("Erro semantico na linha %d -> Uso invalido do identificador '%s'\n", linha_id, id);
+                libera_tabela();
+                exit(1);
+            }
         }
-    } else if(lookahead.atomo == CONSTINT) {
+    } else if (lookahead.atomo == CONSTINT) {
+        int valor = lookahead.atributo.numero;
         consome(CONSTINT);
-    } else if(lookahead.atomo == CONSTCHAR) {
+        printf("CRCT %d\n", valor);
+    } else if (lookahead.atomo == CONSTCHAR) {
         consome(CONSTCHAR);
-    } else if(lookahead.atomo == ABRE_PARENTESES) {
+    } else if (lookahead.atomo == ABRE_PARENTESES) {
         consome(ABRE_PARENTESES);
         expressao();
         consome(FECHA_PARENTESES);
-    } else if(lookahead.atomo == VERDADEIRO) {
+    } else if (lookahead.atomo == VERDADEIRO) {
         consome(VERDADEIRO);
-    } else if(lookahead.atomo == FALSO) {
+        printf("CRCT 1\n");
+    } else if (lookahead.atomo == FALSO) {
         consome(FALSO);
+        printf("CRCT 0\n");
     } else {
-        switch(lookahead.atomo) {
-            case SOMA:
-                consome(SOMA);
-                break;
-            case SUBTRACAO:
-                consome(SUBTRACAO);
-                break;
-            case NAO:
-                consome(NAO);
-                break;
-            default:
-                consome(SOMA);
-                break;
+        TAtomo op = lookahead.atomo;
+        switch (op) {
+            case SOMA:      consome(SOMA); break;
+            case SUBTRACAO: consome(SUBTRACAO); break;
+            case NAO:       consome(NAO); break;
+            default:        consome(SOMA); break;
         }
+        
         fator();
+
+        if (op == SUBTRACAO) {
+            printf("INVR\n");
+        } else if (op == NAO) {
+            printf("NEGA\n");
+        }
     }
 }
