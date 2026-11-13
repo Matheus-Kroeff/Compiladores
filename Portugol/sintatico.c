@@ -189,7 +189,7 @@ void declaracao_de_funcao() {
     
     atualiza_enderecos_rotina(id, num_params);
     
-    printf("L%d: ENPR 1\n", rotulo_rotina);
+    printf("L%d: ENPR\n", rotulo_rotina);
     
     deslocamento = 0;
     int vars_locais = declaracao_de_variaveis();
@@ -199,7 +199,7 @@ void declaracao_de_funcao() {
     if (vars_locais > 0) {
         printf("DMEM %d\n", vars_locais);
     }
-    printf("RTPR 1,%d\n", num_params);
+    printf("RTPR %d\n", num_params);
     
     remove_locais();
     rotina_atual = NULL; // Limpa ao sair da função
@@ -228,7 +228,7 @@ void declaracao_de_procedimento() {
 
     atualiza_enderecos_rotina(id, num_params);
     
-    printf("L%d: ENPR 1\n", rotulo_rotina);
+    printf("L%d: ENPR\n", rotulo_rotina);
     
     deslocamento = 0; // Reinicia deslocamento para as variáveis locais começarem em 0
     int vars_locais = declaracao_de_variaveis();
@@ -238,7 +238,7 @@ void declaracao_de_procedimento() {
     if (vars_locais > 0) {
         printf("DMEM %d\n", vars_locais);
     }
-    printf("RTPR 1,%d\n", num_params);
+    printf("RTPR %d\n", num_params);
     
     remove_locais();
     escopo_atual = 0;
@@ -343,7 +343,7 @@ void comando() {
                 erro_semantico(linha_id, "Numero incorreto de argumentos na chamada de", id);
             }
 
-            printf("CHPR L%d,%d\n", no->rotulo, escopo_atual);
+            printf("CHPR L%d\n", no->rotulo);
 
             if (no->num_params > 0) {
                 printf("DMEM %d\n", no->num_params);
@@ -686,7 +686,10 @@ void fator() {
                 erro_semantico(linha_id, "Numero incorreto de argumentos na chamada de", id);
             }
 
-            printf("CHPR L%d,%d\n", no->rotulo, escopo_atual);
+            printf("CHPR L%d\n", no->rotulo);
+            if (no->num_params > 0) {
+                printf("DMEM %d\n", no->num_params);
+            }
         } else {
             if (no->categoria == CAT_VARIAVEL || no->categoria == CAT_PARAMETRO) {
                 printf("CRVL %d,%d\n", no->escopo, no->endereço);
@@ -697,7 +700,7 @@ void fator() {
                 }
 
                 printf("AMEM 1\n");
-                printf("CHPR L%d,%d\n", no->rotulo, escopo_atual);
+                printf("CHPR L%d\n", no->rotulo);
             } else {
                 erro_semantico(linha_id, "Uso invalido de procedimento em expressao", id);
             }
