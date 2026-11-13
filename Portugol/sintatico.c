@@ -308,19 +308,16 @@ void comando() {
 
         TNo *no = busca(id);
         if (no == NULL) {
-            printf("Erro semantico na linha %d -> Identificador '%s' nao declarado\n", linha_id, id);
-            libera_tabela();
-            exit(1);
+            erro_semantico(linha_id, "Identificador nao declarado", id);
         }
 
         if (lookahead.atomo == ATRIBUICAO) {
-            bool pode_atribuir = (no->categoria == CAT_VARIAVEL) ||
-                                 (no->categoria == CAT_PARAMETRO) ||
-                                 (no->categoria == CAT_FUNCAO && no == rotina_atual);
+            int pode_atribuir = (no->categoria == CAT_VARIAVEL) ||
+                                (no->categoria == CAT_PARAMETRO) ||
+                                (no->categoria == CAT_FUNCAO && no == rotina_atual);
+
             if (!pode_atribuir) {
-                printf("Erro semantico na linha %d -> Identificador '%s' nao pode receber atribuicao neste escopo\n", linha_id, id);
-                libera_tabela();
-                exit(1);
+                erro_semantico(linha_id, "Identificador nao pode receber atribuicao neste escopo", id);
             }
 
             consome(ATRIBUICAO);
@@ -329,11 +326,23 @@ void comando() {
             int nivel = (no->categoria == CAT_FUNCAO) ? 1 : no->escopo;
             printf("ARMZ %d,%d\n", nivel, no->endereço);
         } else {
+            // Chamada de procedimento (com ou sem parênteses)
+            if (no->categoria != CAT_PROCEDIMENTO) {
+                erro_semantico(linha_id, "Identificador nao eh um procedimento", id);
+            }
+
+            int args_passados = 0;
             if (lookahead.atomo == ABRE_PARENTESES) {
                 consome(ABRE_PARENTESES);
-                lista_expressao();
+                args_passados = lista_expressao();
                 consome(FECHA_PARENTESES);
             }
+
+            if (args_passados != no->num_params) {
+                erro_semantico(linha_id, "Numero incorreto de argumentos na chamada de", id);
+            }
+
+            printf("CHPR L%d,%d\n", no->rotulo, escopo_atual);
         }
     } else {
         consome(INICIO);
@@ -458,12 +467,15 @@ void chamada_procedimento() {
 }
 
 // <lista_expressão> ::= <expressão> { ‘,’ <expressão> }
-void lista_expressao() {
+int lista_expressao() {
+    int count = 1;
     expressao();
-    while(lookahead.atomo == VIRGULA) {
+    while (lookahead.atomo == VIRGULA) {
         consome(VIRGULA);
         expressao();
+        count++;
     }
+    return count;
 }
 
 int eh_operador_relacional(TAtomo atomo) {
@@ -651,23 +663,38 @@ void fator() {
 
         TNo *no = busca(id);
         if (no == NULL) {
-            printf("Erro semantico na linha %d -> Identificador '%s' nao declarado\n", linha_id, id);
-            libera_tabela();
-            exit(1);
+            erro_semantico(linha_id, "Identificador nao declarado", id);
         }
 
         if (lookahead.atomo == ABRE_PARENTESES) {
+            // Chamada de função com argumentos
+            if (no->categoria != CAT_FUNCAO) {
+                erro_semantico(linha_id, "Identificador nao eh uma funcao", id);
+            }
+
+            printf("AMEM 1\n");
             consome(ABRE_PARENTESES);
-            lista_expressao();
+            int args_passados = lista_expressao();
             consome(FECHA_PARENTESES);
+
+            if (args_passados != no->num_params) {
+                erro_semantico(linha_id, "Numero incorreto de argumentos na chamada de", id);
+            }
+
+            printf("CHPR L%d,%d\n", no->rotulo, escopo_atual);
         } else {
             if (no->categoria == CAT_VARIAVEL || no->categoria == CAT_PARAMETRO) {
                 printf("CRVL %d,%d\n", no->escopo, no->endereço);
             } else if (no->categoria == CAT_FUNCAO) {
+                // Chamada de função sem argumentos
+                if (no->num_params != 0) {
+                    erro_semantico(linha_id, "Numero incorreto de argumentos na chamada de", id);
+                }
+
+                printf("AMEM 1\n");
+                printf("CHPR L%d,%d\n", no->rotulo, escopo_atual);
             } else {
-                printf("Erro semantico na linha %d -> Uso invalido do identificador '%s'\n", linha_id, id);
-                libera_tabela();
-                exit(1);
+                erro_semantico(linha_id, "Uso invalido de procedimento em expressao", id);
             }
         }
     } else if (lookahead.atomo == CONSTINT) {
