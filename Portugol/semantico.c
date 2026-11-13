@@ -124,24 +124,24 @@ void imprime_tabela() {
         "PROCEDIMENTO"
     };
 
-    printf("\n--- TABELA DE SÍMBOLOS ---\n");
+    fprintf(stderr, "\n--- TABELA DE SÍMBOLOS ---\n");
     for (int i = 0; i < PRIME_NUMER; i++) {
         TNo *p = tabela.entradas[i];
         while (p != NULL) {
             if (p->categoria == CAT_VARIAVEL || p->categoria == CAT_PARAMETRO) {
-                printf("[%d] ID: %-15s | Categoria: %-12s | Escopo: %d | Endereço: %d\n", 
-                       i, p->ID, nomes_categorias[p->categoria], p->escopo, p->endereço);
+                fprintf(stderr, "[%d] ID: %-15s | Categoria: %-12s | Escopo: %d | Endereço: %d\n", 
+                        i, p->ID, nomes_categorias[p->categoria], p->escopo, p->endereço);
             } else if (p->categoria == CAT_FUNCAO) {
-                printf("[%d] ID: %-15s | Categoria: %-12s | Escopo: %d | Rótulo: L%d | Params: %d | Endereço Retorno: %d\n", 
-                       i, p->ID, nomes_categorias[p->categoria], p->escopo, p->rotulo, p->num_params, p->endereço);
+                fprintf(stderr, "[%d] ID: %-15s | Categoria: %-12s | Escopo: %d | Rótulo: L%d | Params: %d | Endereço Retorno: %d\n", 
+                        i, p->ID, nomes_categorias[p->categoria], p->escopo, p->rotulo, p->num_params, p->endereço);
             } else {
-                printf("[%d] ID: %-15s | Categoria: %-12s | Escopo: %d | Rótulo: L%d | Params: %d\n", 
-                       i, p->ID, nomes_categorias[p->categoria], p->escopo, p->rotulo, p->num_params);
+                fprintf(stderr, "[%d] ID: %-15s | Categoria: %-12s | Escopo: %d | Rótulo: L%d | Params: %d\n", 
+                        i, p->ID, nomes_categorias[p->categoria], p->escopo, p->rotulo, p->num_params);
             }
             p = p->prox;
         }
     }
-    printf("---------------------------\n");
+    fprintf(stderr, "---------------------------\n");
 }
 
 // Liberação da Memória da Tabela de Símbolos
