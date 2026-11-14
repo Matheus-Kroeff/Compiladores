@@ -160,7 +160,7 @@ FILE *arquivo;
 int linha_atual = 1;
 
 TInfoAtomo obter_atomo() {
-    TInfoAtomo info;
+    TInfoAtomo info = {0};
     
     char c = fgetc(arquivo);
 
