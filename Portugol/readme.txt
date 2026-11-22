@@ -43,9 +43,11 @@ valgrind, sem erros de memória.
 3. BUGS E LIMITAÇÕES CONHECIDAS
 
   - "mod" gera a instrução MODI, que não existe no interpretador.
-  - Parâmetros com "var" são tratados como passagem por valor (o
-    enunciado não exige passagem por referência).
+  - Parâmetros com "var" são tratados como passagem por valor.
   - Em caso de erro, o MEPA gerado até aquele ponto já foi impresso.
+  - Texto depois do "." final do programa é ignorado.
+  - Identificadores são truncados em 15 caracteres; dois nomes com os
+    mesmos 15 primeiros caracteres são considerados iguais.
 
 Comportamentos do interpretador que precisamos contornar:
 
@@ -64,11 +66,10 @@ Comportamentos do interpretador que precisamos contornar:
   - Ao fim de cada rotina, os símbolos locais são removidos da tabela;
     por isso a tabela impressa no final mostra só os globais.
   - Nível 0 para globais e 1 para locais (a gramática não tem rotinas
-    aninhadas). Parâmetros em -(n+3-i) e retorno da função em -(n+3), 
-    O retorno é feito com "f := ...", aceito só dentro
-    da própria função.
+    aninhadas). Parâmetros em -(n+3-i) e retorno da função em -(n+3).
+    O retorno é feito com "f := ...", aceito só dentro da própria
+    função.
   - Um único contador gera todos os rótulos (L1, L2, ...).
-  - Aceitamos chamadas com parênteses vazios, como p(), igual aos
-    exemplos da Aula 7.
+  - Aceitamos chamadas com parênteses vazios, como p().
   - A struct do átomo é zerada no léxico, para que o sintático nunca
     leia memória não inicializada ao guardar um identificador.
