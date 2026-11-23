@@ -23,7 +23,7 @@ void consome(TAtomo atomo);
 void programa();
 void bloco();
 int declaracao_de_variaveis();
-void lista_variaveis();
+void lista_variaveis(TCategoria cat, int eh_ref);
 void declaracao_de_rotinas();
 void declaracao_de_funcao();
 void declaracao_de_procedimento();
@@ -47,6 +47,7 @@ void termo();
 void operador_multiplicacao();
 void fator();
 void erro_semantico(int linha, const char *msg, const char *id);
+int passa_argumentos(TNo *rotina, int linha_chamada);
 
 int eh_operador_relacional(TAtomo atomo);
 int eh_operador_adicao(TAtomo atomo);
@@ -114,11 +115,11 @@ int declaracao_de_variaveis() {
 
     if(lookahead.atomo == VAR) {
         consome(VAR);
-        lista_variaveis(CAT_VARIAVEL);
+        lista_variaveis(CAT_VARIAVEL, 0);
         consome(PONTO_VIRGULA);
 
         while(lookahead.atomo == IDENTIFICADOR) {
-            lista_variaveis(CAT_VARIAVEL);
+            lista_variaveis(CAT_VARIAVEL, 0);
             consome(PONTO_VIRGULA);
         }
         
@@ -132,7 +133,7 @@ int declaracao_de_variaveis() {
 }
 
 // <lista_variaveis> ::= identificador { ‘,’ identificador } ‘:’ <tipo>
-void lista_variaveis(TCategoria cat) {
+void lista_variaveis(TCategoria cat, int eh_ref) {
     char temp_id[16];
     int linha_id = lookahead.linha;
 
@@ -142,6 +143,7 @@ void lista_variaveis(TCategoria cat) {
     consome(IDENTIFICADOR);
     
     insere(temp_id, cat, escopo_atual, deslocamento++, 0, linha_id);
+    if (eh_ref) busca(temp_id)->eh_ref = 1;
 
     // Processa identificadores adicionais separados por vírgula
     while(lookahead.atomo == VIRGULA) {
@@ -153,6 +155,7 @@ void lista_variaveis(TCategoria cat) {
         consome(IDENTIFICADOR);
         
         insere(temp_id, cat, escopo_atual, deslocamento++, 0, linha_id);
+        if (eh_ref) busca(temp_id)->eh_ref = 1;
     }
     
     consome(DOIS_PONTOS);
@@ -274,10 +277,12 @@ void parametros_formais() {
 
 // <parâmetro_formal> ::= [var] <lista_variaveis>
 void parametro_formal() {
+    int eh_ref = 0;
     if(lookahead.atomo == VAR) {
         consome(VAR);
+        eh_ref = 1;
     }
-    lista_variaveis(CAT_PARAMETRO);
+    lista_variaveis(CAT_PARAMETRO, eh_ref);
 }
 
 // <comando_composto> ::= inicio <comando> { ‘;’ <comando> } fim
@@ -329,7 +334,11 @@ void comando() {
             expressao();
 
             int nivel = (no->categoria == CAT_FUNCAO) ? 1 : no->escopo;
-            printf("ARMZ %d,%d\n", nivel, no->endereço);
+            if (no->eh_ref) {
+                printf("ARMI %d,%d\n", nivel, no->endereço);
+            } else {
+                printf("ARMZ %d,%d\n", nivel, no->endereço);
+            }
         } else {
             if (no->categoria != CAT_PROCEDIMENTO) {
                 erro_semantico(linha_id, "Identificador nao eh um procedimento", id);
@@ -339,7 +348,7 @@ void comando() {
             if (lookahead.atomo == ABRE_PARENTESES) {
                 consome(ABRE_PARENTESES);
                 if (lookahead.atomo != FECHA_PARENTESES) {
-                    args_passados = lista_expressao();
+                    args_passados = passa_argumentos(no, linha_id);
                 }
                 consome(FECHA_PARENTESES);
             }
@@ -384,7 +393,11 @@ void comando_entrada() {
         erro_semantico(linha_id, "Identificador invalido para leitura", id);
     }
     printf("LEIT\n");
-    printf("ARMZ %d,%d\n", no->escopo, no->endereço);
+    if (no->eh_ref) {
+        printf("ARMI %d,%d\n", no->escopo, no->endereço);
+    } else {
+        printf("ARMZ %d,%d\n", no->escopo, no->endereço);
+    }
 
     while (lookahead.atomo == VIRGULA) {
         consome(VIRGULA);
@@ -402,7 +415,11 @@ void comando_entrada() {
             erro_semantico(linha_id, "Identificador invalido para leitura", id);
         }
         printf("LEIT\n");
-        printf("ARMZ %d,%d\n", no->escopo, no->endereço);
+        if (no->eh_ref) {
+            printf("ARMI %d,%d\n", no->escopo, no->endereço);
+        } else {
+            printf("ARMZ %d,%d\n", no->escopo, no->endereço);
+        }
     }
 
     consome(FECHA_PARENTESES);
@@ -684,7 +701,7 @@ void fator() {
             consome(ABRE_PARENTESES);
             int args_passados = 0;
             if (lookahead.atomo != FECHA_PARENTESES) {
-                args_passados = lista_expressao();
+                args_passados = passa_argumentos(no, linha_id);
             }
             consome(FECHA_PARENTESES);
 
@@ -698,7 +715,11 @@ void fator() {
             }
         } else {
             if (no->categoria == CAT_VARIAVEL || no->categoria == CAT_PARAMETRO) {
+                if (no->eh_ref) {
+                printf("CRVI %d,%d\n", no->escopo, no->endereço);
+                } else {
                 printf("CRVL %d,%d\n", no->escopo, no->endereço);
+                }
             } else if (no->categoria == CAT_FUNCAO) {
                 if (no->num_params != 0) {
                     erro_semantico(linha_id, "Numero incorreto de argumentos na chamada de", id);
@@ -754,3 +775,48 @@ void fator() {
         }
     }
 }
+int passa_argumentos(TNo *rotina, int linha_chamada) {
+    int count = 0;
+
+    while (1) {
+        if (count < 20 && rotina->param_ref[count]) {
+            // Parâmetro por referência: exige um IDENTIFICADOR de variável ou parâmetro
+            if (lookahead.atomo != IDENTIFICADOR) {
+                erro_semantico(linha_chamada, "Argumento por referencia deve ser uma variavel na chamada de", rotina->ID);
+            }
+
+            char arg_id[16];
+            int linha_arg = lookahead.linha;
+            strncpy(arg_id, lookahead.atributo.id, 15);
+            arg_id[15] = '\0';
+            consome(IDENTIFICADOR);
+
+            TNo *arg = busca(arg_id);
+            if (arg == NULL) {
+                erro_semantico(linha_arg, "Identificador nao declarado", arg_id);
+            }
+            if (arg->categoria != CAT_VARIAVEL && arg->categoria != CAT_PARAMETRO) {
+                erro_semantico(linha_arg, "Argumento por referencia deve ser uma variavel", arg_id);
+            }
+
+            // Se o argumento já for referência, copia o endereço com CRVL; senão, pega endereço com CREN
+            if (arg->eh_ref) {
+                printf("CRVL %d,%d\n", arg->escopo, arg->endereço);
+            } else {
+                printf("CREN %d,%d\n", arg->escopo, arg->endereço);
+            }
+        } else {
+            // Parâmetro por valor normal
+            expressao();
+        }
+
+        count++;
+        if (lookahead.atomo == VIRGULA) {
+            consome(VIRGULA);
+        } else {
+            break;
+        }
+    }
+    return count;
+}
+
