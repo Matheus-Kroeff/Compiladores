@@ -16,6 +16,8 @@ typedef struct _TNo {
    int endereço;       
    int rotulo;
    int num_params;
+   int eh_ref;          // 1 se for parametro 'var', 0 caso contrario
+   int param_ref[20];
    TCategoria categoria;
    int escopo;          // 0 = global, 1 = local
    struct _TNo *prox;
@@ -73,6 +75,8 @@ void insere(char *id, TCategoria categoria, int escopo, int endereco, int rotulo
     novo->endereço = endereco;
     novo->rotulo = rotulo;
     novo->num_params = 0;
+    novo->eh_ref = 0;
+    memset(novo->param_ref, 0, sizeof(novo->param_ref));
 
     // Inserção no início da lista encadeada da entrada i
     novo->prox = tabela.entradas[i];
@@ -81,16 +85,19 @@ void insere(char *id, TCategoria categoria, int escopo, int endereco, int rotulo
 
 // Ajusta endereços dos parâmetros para a convenção MEPA -(n+2) .. -3 e o retorno da função para -(n+3)
 void atualiza_enderecos_rotina(char *id_rotina, int num_params) {
+    TNo *rotina = busca(id_rotina);
+
     for (int i = 0; i < PRIME_NUMER; i++) {
         for (TNo *p = tabela.entradas[i]; p != NULL; p = p->prox) {
             if (p->escopo == 1 && p->categoria == CAT_PARAMETRO) {
+                if (rotina != NULL && p->endereço < 20) {
+                    rotina->param_ref[p->endereço] = p->eh_ref;
+                }
                 p->endereço = p->endereço - (num_params + 2);
             }
         }
     }
 
-    // Se for função, atualiza o endereço do valor de retorno para -(num_params + 3)
-    TNo *rotina = busca(id_rotina);
     if (rotina != NULL) {
         rotina->num_params = num_params;
         if (rotina->categoria == CAT_FUNCAO) {
