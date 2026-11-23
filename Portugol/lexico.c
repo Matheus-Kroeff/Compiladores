@@ -180,7 +180,11 @@ TInfoAtomo obter_atomo() {
                 if (atual == '\n') linha_atual++;
                 anterior = atual;
                 atual = fgetc(arquivo);
-                if (atual == EOF) break;
+                if (atual == EOF) {         
+                    info.linha = linha_atual;
+                    info.atomo = ERRO;
+                    return info;
+                }
             }
             return obter_atomo(); // Pega o próximo átomo após o comentário
         } else {
